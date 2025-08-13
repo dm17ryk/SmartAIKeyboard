@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.smartaikeyboard"
+    namespace = "com.github.dm17ryk.smartkeyboard"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.smartaikeyboard"
+        applicationId = "com.github.dm17ryk.smartkeyboard"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
