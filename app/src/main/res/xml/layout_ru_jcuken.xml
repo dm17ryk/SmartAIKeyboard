@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<keyboard>
+    <row>
+        <key l="й"/><key l="ц"/><key l="у"/><key l="к"/><key l="е"/>
+        <key l="н"/><key l="г"/><key l="ш"/><key l="щ"/><key l="з"/>
+    </row>
+    <row>
+        <key l="ф"/><key l="ы"/><key l="в"/><key l="а"/><key l="п"/>
+        <key l="р"/><key l="о"/><key l="л"/><key l="д"/>
+    </row>
+    <row>
+        <key l="я"/><key l="ч"/><key l="с"/><key l="м"/>
+        <key l="и"/><key l="т"/><key l="ь"/>
+    </row>
+</keyboard>

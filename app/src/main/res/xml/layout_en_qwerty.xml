@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<keyboard>
+    <row>
+        <key l="q"/><key l="w"/><key l="e"/><key l="r"/><key l="t"/>
+        <key l="y"/><key l="u"/><key l="i"/><key l="o"/><key l="p"/>
+    </row>
+    <row>
+        <key l="a"/><key l="s"/><key l="d"/><key l="f"/><key l="g"/>
+        <key l="h"/><key l="j"/><key l="k"/><key l="l"/>
+    </row>
+    <row>
+        <key l="z"/><key l="x"/><key l="c"/><key l="v"/>
+        <key l="b"/><key l="n"/><key l="m"/>
+    </row>
+    <!-- спец‑ряд отрисуем программно (Shift / Lang / Space / Delete / Enter) -->
+</keyboard>
