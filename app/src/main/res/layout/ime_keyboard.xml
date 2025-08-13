@@ -1,55 +1,175 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/ime_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:orientation="vertical"
     android:background="#222222"
     android:padding="8dp">
 
-    <!-- Простейшая панель: одна кнопка Space и подпись -->
-    <LinearLayout
-        android:id="@+id/row"
+    <!-- Candidate Bar -->
+    <HorizontalScrollView
+        android:id="@+id/candidate_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:fillViewport="true"
+        android:scrollbars="none"
+        android:visibility="gone">
+        <LinearLayout
+            android:id="@+id/candidate_container"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"/>
+    </HorizontalScrollView>
+
+    <!-- Undo Chip -->
+    <TextView
+        android:id="@+id/undo_chip"
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        android:background="#444444"
+        android:textColor="#FFFFFF"
+        android:text="Отменить"
+        android:gravity="center"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:layout_marginTop="4dp"
+        android:visibility="gone" />
+
+    <!-- Лейбл -->
+    <TextView
+        android:id="@+id/label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:text="@string/ime_placeholder"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp" />
 
-        <TextView
-            android:id="@+id/label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/ime_placeholder"
-            android:textSize="14sp"
-            android:textColor="#FFFFFF"
-            android:gravity="center"
-            android:padding="4dp" />
+    <!-- Временная буквенная полоса (для теста RU) -->
+    <LinearLayout
+        android:id="@+id/row_letters1"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginBottom="6dp">
 
+        <!-- Набор нужных букв: к о р е к т о р | ч е п у х у -->
+        <Button
+            android:id="@+id/btn_ru_k"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="к" />
+        <Button
+            android:id="@+id/btn_ru_o1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="о" />
+        <Button
+            android:id="@+id/btn_ru_r"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="р" />
+        <Button
+            android:id="@+id/btn_ru_e1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="е" />
+        <Button
+            android:id="@+id/btn_ru_t"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="т" />
+        <Button
+            android:id="@+id/btn_ru_c"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="ч" />
+    </LinearLayout>
         <LinearLayout
-            android:id="@+id/keys_row"
+            android:id="@+id/row_letters2"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:orientation="horizontal"
-            android:gravity="center">
-
-            <Button
-                android:id="@+id/btn_space"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:text="Space" />
-
-            <Button
-                android:id="@+id/btn_delete"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:text="⌫" />
-
-            <Button
-                android:id="@+id/btn_enter"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:text="↵" />
-        </LinearLayout>
+            android:gravity="center"
+            android:layout_marginBottom="6dp">
+        <Button
+            android:id="@+id/btn_ru_e2"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="е" />
+        <Button
+            android:id="@+id/btn_ru_p"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="п" />
+        <Button
+            android:id="@+id/btn_ru_u"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="у" />
+        <Button
+            android:id="@+id/btn_ru_h"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="х" />
+        <Button
+            android:id="@+id/btn_ru_o2"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="о" />
+        <Button
+            android:id="@+id/btn_ru_e3"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="е" />
     </LinearLayout>
-</FrameLayout>
+
+    <!-- Ряд с Space / Delete / Enter -->
+    <LinearLayout
+        android:id="@+id/keys_row"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btn_space"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="Space" />
+
+        <Button
+            android:id="@+id/btn_delete"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="⌫" />
+
+        <Button
+            android:id="@+id/btn_enter"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:text="↵" />
+    </LinearLayout>
+</LinearLayout>
