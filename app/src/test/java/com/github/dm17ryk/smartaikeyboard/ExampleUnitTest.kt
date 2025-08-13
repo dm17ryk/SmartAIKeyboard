@@ -1,4 +1,4 @@
-package com.github.dm17ryk.smartkeyboard
+package com.github.dm17ryk.smartaikeyboard
 
 import org.junit.Test
 

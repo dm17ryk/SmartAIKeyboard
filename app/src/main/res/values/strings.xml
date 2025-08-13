@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">SmartAIKeyboard</string>
+
+    <!-- Подписи подтипов -->
+    <string name="subtype_ru">Русский</string>
+    <string name="subtype_en">English</string>
+
+    <!-- Текст в нашей заглушке клавиатуры -->
+    <string name="ime_placeholder">SmartAIKeyboard: клавиатура подключена</string>
 </resources>
