@@ -14,7 +14,7 @@
 
     <!-- Row 2: ASDFGHJKL  (blue: @ # & *  + = ( )) -->
     <row>
-        <key l="a" lp="@"/><key l="s" lp="#"/><key l="d" lp="&amp;"/><key l="f" lp="*"/><key l="g"/>
+        <key l="a" lp="@,á,à,ä" /><key l="s" lp="#"/><key l="d" lp="&amp;"/><key l="f" lp="*"/><key l="g"/>
         <key l="h" lp="+"/><key l="j" lp="="/><key l="k" lp="("/><key l="l" lp=")"/>
     </row>
 

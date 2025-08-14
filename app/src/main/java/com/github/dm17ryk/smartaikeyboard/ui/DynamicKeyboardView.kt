@@ -5,45 +5,75 @@ import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
 import android.util.TypedValue
-import android.view.*
-import android.widget.*
+import android.view.Gravity
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.TextView
 import com.github.dm17ryk.smartaikeyboard.layout.KeySpec
 import com.github.dm17ryk.smartaikeyboard.layout.KeyboardSpec
 import kotlin.math.max
 
+/**
+ * Рендер клавиатуры:
+ * - Ровные колонки внутри каждого ряда.
+ * - Верхний числовой ряд всегда 10 колонок.
+ * - Последний буквенный ряд: ⇧ | центр букв | ⌫ (⇧ и ⌫ занимают по 1 колонке).
+ * - На каждой буквенной клавише отображается маленький alt-хинт (первый элемент из lp в XML).
+ * - Тап: показываем single-превью над клавишей и печатаем основную букву.
+ * - Long-press: всплывает полоса вариантов из lp; выбор — горизонтальным движением, коммит по отпусканию.
+ */
 class DynamicKeyboardView(
     private val context: Context,
     private val onKey: (KeyEvent) -> Unit
 ) {
+
     enum class SpecialKey { SHIFT, LANG, SPACE, DELETE, ENTER }
     data class KeyEvent(val text: String? = null, val special: SpecialKey? = null)
 
-    var isShift = false
-        set(value) { field = value; refreshLabels() }
+    /** Состояние Shift (caps one-shot). Управляет регистром основной метки и вывода. */
+    var isShift: Boolean = false
+        set(value) {
+            field = value
+            refreshLabels()
+        }
 
+    /** Надпись на кнопке смены языка в нижнем ряду. */
     var langLabel: String = "EN"
 
     private var root: LinearLayout? = null
 
+    /** Храним ссылки на текстовые метки, чтобы быстро обновлять их при смене Shift. */
     private data class LetterViews(
         val root: FrameLayout,
-        val mainLabel: TextView,
-        val altLabel: TextView?,
-        val base: String,            // исходный символ
-        val altBase: String?,        // alt-хинт для показа (может быть null)
-        val spec: KeySpec            // ссылка на KeySpec для доступа к lp списку
+        val mainLabel: TextView,    // большая метка по центру
+        val altLabel: TextView?,    // маленькая метка вверху-справа (может быть null)
+        val base: String,           // исходная буква из XML (label)
+        val altBase: String?,       // первый элемент из lp (как отображаемый хинт)
+        val spec: KeySpec           // сам KeySpec (нужен для набора опций lp)
     )
+
     private val letterViews = mutableListOf<LetterViews>()
     private val specialButtons = mutableMapOf<SpecialKey, Button>()
 
+    // Превью/меню вариантов
     private val popup = KeyPopup(context)
     private val handler = Handler(Looper.getMainLooper())
 
+    // ---- utils ----
     private fun dp(v: Int) = (context.resources.displayMetrics.density * v).toInt()
 
-    // ---------- Public API ----------
+    // =====================================================================
+    // Public API
+    // =====================================================================
+
+    /**
+     * Построить вью клавиатуры внутри данного контейнера по спецификации.
+     */
     fun buildInto(container: LinearLayout, spec: KeyboardSpec) {
-        // ... (НИЖЕ полная реализация render — как в предыдущем шаге, укороченная здесь
         container.removeAllViews()
         root = container
         letterViews.clear()
@@ -54,33 +84,47 @@ class DynamicKeyboardView(
         val gap = dp(4)
         val halfGap = gap / 2
 
-        // Row0 numbers (10)
-        val numbers = spec.rows.first()
-        val row0 = LinearLayout(context).apply {
-            layoutParams = ViewGroup.MarginLayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, keyH
-            )
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-        }
-        numbers.keys.forEach { k ->
-            val cell = makeKeyCell(k, isRu = false) // alt не показываем у чисел
-            val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
-                leftMargin = halfGap; rightMargin = halfGap
+        // ---------------- Row 0: числовой (всегда 10 колонок) ----------------
+        val numbers = spec.rows.firstOrNull()
+        if (numbers != null) {
+            val row0 = LinearLayout(context).apply {
+                layoutParams = ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, keyH
+                )
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER
             }
-            row0.addView(cell.root, lp)
-            letterViews.add(cell)
+            // На цифрах alt-хинт не рисуем и long-press не даём (при необходимости — добавим позже)
+            numbers.keys.forEach { k ->
+                val cell = makeKeyCell(
+                    label = k.label,
+                    alt = null,
+                    onTap = { onKey(KeyEvent(text = k.label)) },
+                    onLong = { null } // нет меню
+                )
+                val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
+                    leftMargin = halfGap; rightMargin = halfGap
+                }
+                row0.addView(cell.root, lp)
+                letterViews.add(cell)
+            }
+            container.addView(row0)
         }
-        container.addView(row0)
 
-        // Language-specific rows
+        // ---------------- Буквенные ряды ----------------
+        // Для выравнивания задаём "целевое" число колонок на ряд: EN → 10/9/9, RU → 11/11/11
         val isRu = isRuLayout(spec)
         val totalColsRow1 = if (isRu) 11 else 10
         val totalColsRow2 = if (isRu) 11 else 9
-        val totalColsRow3 = if (isRu) 11 else 9
+        val totalColsRow3 = if (isRu) 11 else 9 // (⇧ + letters + ⌫) суммарно
 
         spec.rows.drop(1).forEachIndexed { idx, row ->
-            val targetCols = when (idx) { 0 -> totalColsRow1; 1 -> totalColsRow2; else -> totalColsRow3 }
+            val targetCols = when (idx) {
+                0 -> totalColsRow1
+                1 -> totalColsRow2
+                else -> totalColsRow3
+            }
+
             val rowView = LinearLayout(context).apply {
                 layoutParams = ViewGroup.MarginLayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, keyH
@@ -90,15 +134,26 @@ class DynamicKeyboardView(
             }
 
             if (idx == 2) {
+                // Последний буквенный ряд: ⇧ | pad | letters | pad | ⌫  (в сумме targetCols)
                 val lettersCount = row.keys.size
                 val extra = targetCols - lettersCount - 2
                 val padL = max(0, extra / 2)
                 val padR = max(0, extra - padL)
 
                 addSpecialColumn(rowView, SpecialKey.SHIFT, "⇧", halfGap)
+
                 repeat(padL) { addSpacer(rowView, halfGap) }
                 row.keys.forEach { k ->
-                    val cell = makeKeyCell(k, isRu)
+                    val cell = makeKeyCell(
+                        label = k.label,
+                        alt = hintFrom(k),
+                        onTap = { onKey(KeyEvent(text = outputFor(k.label))) },
+                        onLong = {
+                            val opts = optionsFrom(k)
+                            if (opts.isEmpty()) null else opts
+                        },
+                        keySpec = k
+                    )
                     val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
                         leftMargin = halfGap; rightMargin = halfGap
                     }
@@ -106,8 +161,10 @@ class DynamicKeyboardView(
                     letterViews.add(cell)
                 }
                 repeat(padR) { addSpacer(rowView, halfGap) }
+
                 addSpecialColumn(rowView, SpecialKey.DELETE, "⌫", halfGap)
             } else {
+                // Обычная буквенная строка: pad | letters | pad  (до targetCols)
                 val lettersCount = row.keys.size
                 val extra = targetCols - lettersCount
                 val padL = max(0, extra / 2)
@@ -115,7 +172,16 @@ class DynamicKeyboardView(
 
                 repeat(padL) { addSpacer(rowView, halfGap) }
                 row.keys.forEach { k ->
-                    val cell = makeKeyCell(k, isRu)
+                    val cell = makeKeyCell(
+                        label = k.label,
+                        alt = hintFrom(k),
+                        onTap = { onKey(KeyEvent(text = outputFor(k.label))) },
+                        onLong = {
+                            val opts = optionsFrom(k)
+                            if (opts.isEmpty()) null else opts
+                        },
+                        keySpec = k
+                    )
                     val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
                         leftMargin = halfGap; rightMargin = halfGap
                     }
@@ -124,10 +190,11 @@ class DynamicKeyboardView(
                 }
                 repeat(padR) { addSpacer(rowView, halfGap) }
             }
+
             container.addView(rowView)
         }
 
-        // bottom row
+        // ---------------- Нижний служебный ряд ----------------
         val bottom = LinearLayout(context).apply {
             layoutParams = ViewGroup.MarginLayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(52)
@@ -143,67 +210,86 @@ class DynamicKeyboardView(
         refreshLabels()
     }
 
-    // ---------- cells ----------
+    // =====================================================================
+    // Построение ячеек
+    // =====================================================================
 
-    private fun makeKeyCell(k: KeySpec, isRu: Boolean): LetterViews {
-        val altHint = computeAltHintForDisplay(k, isRu)
-
+    /**
+     * Создать буквенную/символьную ячейку с фоном‑кнопкой, основной меткой и alt‑хинтом.
+     *
+     * @param label   основной символ (из XML)
+     * @param alt     маленький хинт (первый элемент lp) — может быть null
+     * @param onTap   действие по короткому нажатию (обычно вставка label)
+     * @param onLong  возвращает список опций для long‑press меню или null/пусто, если меню не нужно
+     * @param keySpec исходный KeySpec (храним для обновления меток)
+     */
+    private fun makeKeyCell(
+        label: String,
+        alt: String?,
+        onTap: () -> Unit,
+        onLong: (() -> List<String>?)?,
+        keySpec: KeySpec? = null
+    ): LetterViews {
+        // фон-кнопка (даёт ripple/нажатие)
         val buttonBg = styledButtonBg()
         val cell = FrameLayout(context)
+
+        // основная метка
         val tvMain = TextView(context).apply {
             setTextColor(0xFFFFFFFF.toInt())
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
             typeface = Typeface.DEFAULT_BOLD
-            text = k.label
+            text = label
             gravity = Gravity.CENTER
         }
-        val tvAlt = altHint?.let {
+
+        // alt‑подсказка (верх‑право), синим
+        val tvAlt = alt?.let {
             TextView(context).apply {
-                setTextColor(0xFF4FC3F7.toInt())
+                setTextColor(0xFF4FC3F7.toInt()) // голубой как в референсе
                 setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
                 typeface = Typeface.DEFAULT_BOLD
                 text = it
             }
         }
 
-        cell.addView(buttonBg, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
-        ))
-        cell.addView(tvMain, FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
-        ))
+        // иерархия
+        cell.addView(
+            buttonBg,
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        )
+        cell.addView(
+            tvMain,
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        )
         tvAlt?.let {
             val lpAlt = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
                 gravity = Gravity.TOP or Gravity.END
-                val m = dp(4)
-                setMargins(m, m, m, m)
+                val m = dp(4); setMargins(m, m, m, m)
             }
             cell.addView(it, lpAlt)
         }
 
-        // touch logic: preview + long press menu
+        // touch‑логика: single preview + возможное переключение в multi
         val longPressDelay = 300L
         var longTriggered = false
         var options: List<String> = emptyList()
 
         val longPressRunnable = Runnable {
+            val opts = onLong?.invoke()
+            if (opts.isNullOrEmpty()) return@Runnable
             longTriggered = true
-            // собрать варианты
-            options = buildOptions(k, isRu)
-            if (options.isEmpty()) {
-                // нет альтернатив — оставим single
-                return@Runnable
-            }
+            options = opts
             popup.showMulti(cell, options, 0)
         }
 
-        buttonBg.setOnTouchListener { v, ev ->
+        buttonBg.setOnTouchListener { _, ev ->
             when (ev.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     longTriggered = false
-                    popup.showSingle(cell, outputFor(k.label))
+                    popup.showSingle(cell, outputFor(label))
                     handler.postDelayed(longPressRunnable, longPressDelay)
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -214,11 +300,9 @@ class DynamicKeyboardView(
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     handler.removeCallbacks(longPressRunnable)
                     if (longTriggered && options.isNotEmpty()) {
-                        // commit выбранный вариант
-                        popup.getSelected()?.let { onKey(KeyEvent(text = it)) }
+                        popup.getSelected()?.let { onKey(KeyEvent(text = applyShiftIfLetter(it))) }
                     } else {
-                        // короткое нажатие -> базовая буква
-                        onKey(KeyEvent(text = outputFor(k.label)))
+                        onTap()
                     }
                     popup.hideAll()
                 }
@@ -226,25 +310,19 @@ class DynamicKeyboardView(
             true
         }
 
-        return LetterViews(cell, tvMain, tvAlt, base = k.label, altBase = altHint, spec = k)
+        return LetterViews(
+            root = cell,
+            mainLabel = tvMain,
+            altLabel = tvAlt,
+            base = label,
+            altBase = alt,
+            spec = keySpec ?: KeySpec(label)
+        )
     }
 
-    private fun buildOptions(k: KeySpec, isRu: Boolean): List<String> {
-        // порядок для RU "е": сначала ё/Ё, затем lp, если есть
-        val opts = mutableListOf<String>()
-        if (isRu && (k.label == "е" || k.label == "Е")) {
-            opts += if (isShift) "Ё" else "ё"
-        }
-        // lp может быть списком через запятую
-        k.longPress?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }?.let { opts.addAll(it) }
-        if (isRu && (k.label == "ь" || k.label == "Ь") && !opts.contains(if (isShift) "Ъ" else "ъ")) {
-            // добавим ъ/Ъ если его нет в lp
-            opts += if (isShift) "Ъ" else "ъ"
-        }
-        return opts
-    }
-
-    // --- misc render helpers (как в твоей текущей версии) ---
+    // =====================================================================
+    // Вспомогательные строители рядов / кнопок
+    // =====================================================================
 
     private fun addSpacer(row: LinearLayout, halfGap: Int) {
         val v = View(context)
@@ -259,7 +337,7 @@ class DynamicKeyboardView(
             text = label
             setOnClickListener { onKey(KeyEvent(special = which)) }
         }
-        b.minWidth = dp(44)
+        b.minWidth = dp(44) // спец-клавиши не становятся уж слишком узкими
         val lp = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
             leftMargin = halfGap; rightMargin = halfGap
         }
@@ -301,6 +379,7 @@ class DynamicKeyboardView(
         setPadding(0, 0, 0, 0)
     }
 
+    /** Фон‑кнопка без текста — используется внутри LetterViews как кликабельный слой. */
     private fun styledButtonBg(): Button = Button(context).apply {
         text = ""
         setBackgroundColor(0xFF444444.toInt())
@@ -308,8 +387,21 @@ class DynamicKeyboardView(
         setPadding(0, 0, 0, 0)
     }
 
-    private fun displayMain(text: String): String = if (isShift) text.uppercase() else text.lowercase()
+    // =====================================================================
+    // Лейблы и вывод с учётом Shift
+    // =====================================================================
 
+    private fun displayMain(text: String): String =
+        if (isShift) text.uppercase() else text.lowercase()
+
+    private fun applyShiftIfLetter(s: String): String {
+        // Если строка состоит из одной буквы — поднимаем/опускаем регистр по Shift.
+        return if (s.length == 1 && s[0].isLetter()) {
+            if (isShift) s.uppercase() else s.lowercase()
+        } else s
+    }
+
+    /** Обновить метки на всех буквенных клавишах (регистр + alt, если он буквенный). */
     private fun refreshLabels() {
         letterViews.forEach { v ->
             v.mainLabel.text = displayMain(v.base)
@@ -324,23 +416,37 @@ class DynamicKeyboardView(
         specialButtons[SpecialKey.LANG]?.text = langLabel
     }
 
+    // =====================================================================
+    // Разбор XML-атрибутов lp (универсально для всех языков)
+    // =====================================================================
+
+    /** Маленький хинт на клавише — это первый элемент списка lp, если он задан. */
+    private fun hintFrom(k: KeySpec): String? =
+        k.longPress
+            ?.split(',')
+            ?.map { it.trim() }
+            ?.firstOrNull()
+            ?.takeIf { it.isNotEmpty() }
+
+    /** Полный список опций для long‑press — все элементы lp, если заданы. */
+    private fun optionsFrom(k: KeySpec): List<String> =
+        k.longPress
+            ?.split(',')
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?: emptyList()
+
+    // =====================================================================
+    // Эвристики компоновки
+    // =====================================================================
+
+    /** Простейшая эвристика распознать RU: первая буквенная строка содержит >10 клавиш (11). */
     private fun isRuLayout(spec: KeyboardSpec): Boolean {
         val row1 = spec.rows.getOrNull(1) ?: return false
         return row1.keys.size > 10
     }
 
-    private fun computeAltHintForDisplay(k: KeySpec, isRu: Boolean): String? {
-        val explicit = k.longPress?.split(',')?.firstOrNull()?.trim()?.takeIf { it.isNotEmpty() }
-        if (!explicit.isNullOrEmpty()) return explicit
-        if (isRu) {
-            return when (k.label) {
-                "е", "Е" -> "ё"
-                "ь", "Ь" -> "ъ"
-                else -> null
-            }
-        }
-        return null
-    }
-
-    private fun outputFor(base: String): String = if (isShift) base.uppercase() else base
+    /** Вычислить итоговый вывод для основной буквы с учётом Shift. */
+    private fun outputFor(base: String): String =
+        if (isShift) base.uppercase() else base
 }

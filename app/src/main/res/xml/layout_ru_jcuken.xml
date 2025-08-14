@@ -8,7 +8,7 @@
 
     <!-- Row 1: (blue: % ^ ~ | [ ] < > { } №) -->
     <row>
-        <key l="й" lp="%"/><key l="ц" lp="^"/><key l="у" lp="~"/><key l="к" lp="|"/><key l="е" lp="["/>
+        <key l="й" lp="%"/><key l="ц" lp="^"/><key l="у" lp="~"/><key l="к" lp="|"/><key l="е" lp="[,ё" />
         <key l="н" lp="]"/><key l="г" lp="&lt;"/><key l="ш" lp="&gt;"/><key l="щ" lp="{"/><key l="з" lp="}"/><key l="х" lp="№"/>
     </row>
 
