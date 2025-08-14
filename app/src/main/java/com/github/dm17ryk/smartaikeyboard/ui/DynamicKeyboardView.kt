@@ -278,14 +278,14 @@ class DynamicKeyboardView(
         var options: List<String> = emptyList()
 
         val longPressRunnable = Runnable {
-            val opts = onLong?.invoke()
-            if (opts.isNullOrEmpty()) return@Runnable
+            val opts = onLong?.invoke() ?: emptyList()
             longTriggered = true
-            options = opts
-            popup.showMulti(cell, options, 0)
+            options = opts.ifEmpty { listOf(outputFor(label)) }
+            popup.showMulti(cell, options, 0)  // даже один — показываем
         }
 
-        buttonBg.setOnTouchListener { _, ev ->
+
+        buttonBg.setOnTouchListener { v, ev ->
             when (ev.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     longTriggered = false
@@ -300,7 +300,8 @@ class DynamicKeyboardView(
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     handler.removeCallbacks(longPressRunnable)
                     if (longTriggered && options.isNotEmpty()) {
-                        popup.getSelected()?.let { onKey(KeyEvent(text = applyShiftIfLetter(it))) }
+                        val chosen = popup.getSelected()
+                        if (chosen != null) onKey(KeyEvent(text = chosen))
                     } else {
                         onTap()
                     }
