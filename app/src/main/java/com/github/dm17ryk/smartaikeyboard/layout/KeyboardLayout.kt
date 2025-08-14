@@ -3,7 +3,10 @@ package com.github.dm17ryk.smartaikeyboard.layout
 import android.content.Context
 import org.xmlpull.v1.XmlPullParser
 
-data class KeySpec(val label: String)
+data class KeySpec(
+    val label: String,
+    val longPress: String? = null // одно значение или список через запятую — пока берем первое
+)
 data class RowSpec(val keys: List<KeySpec>)
 data class KeyboardSpec(val rows: List<RowSpec>)
 
@@ -20,7 +23,11 @@ object KeyboardLoader {
                 XmlPullParser.START_TAG -> {
                     when (parser.name) {
                         "row" -> currentRow = mutableListOf()
-                        "key" -> currentRow?.add(KeySpec(label = parser.getAttributeValue(null, "l") ?: ""))
+                        "key" -> {
+                            val l = parser.getAttributeValue(null, "l") ?: ""
+                            val lp = parser.getAttributeValue(null, "lp") // может быть null
+                            currentRow?.add(KeySpec(label = l, longPress = lp))
+                        }
                     }
                 }
                 XmlPullParser.END_TAG -> {

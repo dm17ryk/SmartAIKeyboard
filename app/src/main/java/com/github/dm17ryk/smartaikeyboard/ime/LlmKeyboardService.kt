@@ -15,7 +15,6 @@ import com.github.dm17ryk.smartaikeyboard.ui.DynamicKeyboardView.SpecialKey
 class LlmKeyboardService : InputMethodService() {
 
     private var inputView: View? = null
-
     private lateinit var dyn: DynamicKeyboardView
     private var currentLang: Lang = Lang.EN
 
@@ -23,22 +22,18 @@ class LlmKeyboardService : InputMethodService() {
 
     override fun onCreate() {
         super.onCreate()
-        dyn = DynamicKeyboardView(this) { ke ->
-            handleKeyEvent(ke)
-        }
+        dyn = DynamicKeyboardView(this) { ev -> handleKeyEvent(ev) }
     }
 
     override fun onCreateInputView(): View {
         val view = LayoutInflater.from(this).inflate(R.layout.ime_keyboard, null)
-        val container = view.findViewById<LinearLayout>(R.id.keyboard_container)
-        renderCurrentLayout(container)
+        renderCurrentLayout(view.findViewById(R.id.keyboard_container))
         inputView = view
         return view
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         super.onStartInputView(info, restarting)
-        // Сбрасываем Shift при каждом показе
         dyn.isShift = false
     }
 
@@ -55,29 +50,21 @@ class LlmKeyboardService : InputMethodService() {
 
     private fun handleKeyEvent(ev: DynamicKeyboardView.KeyEvent) {
         val ic = currentInputConnection ?: return
-        when {
-            ev.special == SpecialKey.SHIFT -> {
-                dyn.isShift = !dyn.isShift
-            }
-            ev.special == SpecialKey.LANG -> {
+        when (ev.special) {
+            SpecialKey.SHIFT -> dyn.isShift = !dyn.isShift
+            SpecialKey.LANG  -> {
                 currentLang = if (currentLang == Lang.EN) Lang.RU else Lang.EN
-                val container = inputView?.findViewById<LinearLayout>(R.id.keyboard_container) ?: return
                 dyn.isShift = false
+                val container = inputView?.findViewById<LinearLayout>(R.id.keyboard_container) ?: return
                 renderCurrentLayout(container)
             }
-            ev.special == SpecialKey.SPACE -> {
-                ic.commitText(" ", 1)
-            }
-            ev.special == SpecialKey.DELETE -> {
-                ic.deleteSurroundingText(1, 0)
-            }
-            ev.special == SpecialKey.ENTER -> {
-                sendEnter(ic)
-            }
-            ev.text != null -> {
-                val out = ev.text
+            SpecialKey.SPACE -> ic.commitText(" ", 1)
+            SpecialKey.DELETE -> ic.deleteSurroundingText(1, 0)
+            SpecialKey.ENTER -> sendEnter(ic)
+            null -> {
+                val out = ev.text ?: return
                 ic.commitText(out, 1)
-                if (dyn.isShift) dyn.isShift = false // обычный behavior: одноразовый шифт
+                if (dyn.isShift) dyn.isShift = false // одноразовый шифт
             }
         }
     }

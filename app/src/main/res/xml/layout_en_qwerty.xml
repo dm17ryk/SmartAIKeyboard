@@ -1,16 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <keyboard>
+    <!-- Numbers: всегда 10 колонок, без завязки на буквы -->
     <row>
-        <key l="q"/><key l="w"/><key l="e"/><key l="r"/><key l="t"/>
-        <key l="y"/><key l="u"/><key l="i"/><key l="o"/><key l="p"/>
+        <key l="1"/><key l="2"/><key l="3"/><key l="4"/><key l="5"/>
+        <key l="6"/><key l="7"/><key l="8"/><key l="9"/><key l="0"/>
     </row>
+
+    <!-- Row 1: QWERTYUIOP  (blue: % ^ ~ | [ ] < > { }) -->
     <row>
-        <key l="a"/><key l="s"/><key l="d"/><key l="f"/><key l="g"/>
-        <key l="h"/><key l="j"/><key l="k"/><key l="l"/>
+        <key l="q" lp="%"/><key l="w" lp="^"/><key l="e" lp="~"/><key l="r" lp="|"/><key l="t" lp="["/>
+        <key l="y" lp="]"/><key l="u" lp="&lt;"/><key l="i" lp="&gt;"/><key l="o" lp="{"/><key l="p" lp="}"/>
     </row>
+
+    <!-- Row 2: ASDFGHJKL  (blue: @ # & *  + = ( )) -->
     <row>
-        <key l="z"/><key l="x"/><key l="c"/><key l="v"/>
-        <key l="b"/><key l="n"/><key l="m"/>
+        <key l="a" lp="@"/><key l="s" lp="#"/><key l="d" lp="&amp;"/><key l="f" lp="*"/><key l="g"/>
+        <key l="h" lp="+"/><key l="j" lp="="/><key l="k" lp="("/><key l="l" lp=")"/>
     </row>
-    <!-- спец‑ряд отрисуем программно (Shift / Lang / Space / Delete / Enter) -->
+
+    <!-- Row 3: ZXCVBNM  (blue: _ $ \" : ; / ?) -->
+    <row>
+        <key l="z" lp="_"/><key l="x" lp="$"/><key l="c" lp="&quot;"/><key l="v" lp=":"/>
+        <key l="b" lp=";"/><key l="n" lp="/"/><key l="m" lp="?"/>
+    </row>
 </keyboard>

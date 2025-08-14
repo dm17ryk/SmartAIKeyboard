@@ -1,15 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <keyboard>
+    <!-- Numbers: 10 колонок -->
     <row>
-        <key l="й"/><key l="ц"/><key l="у"/><key l="к"/><key l="е"/>
-        <key l="н"/><key l="г"/><key l="ш"/><key l="щ"/><key l="з"/>
+        <key l="1"/><key l="2"/><key l="3"/><key l="4"/><key l="5"/>
+        <key l="6"/><key l="7"/><key l="8"/><key l="9"/><key l="0"/>
     </row>
+
+    <!-- Row 1: (blue: % ^ ~ | [ ] < > { } №) -->
     <row>
-        <key l="ф"/><key l="ы"/><key l="в"/><key l="а"/><key l="п"/>
-        <key l="р"/><key l="о"/><key l="л"/><key l="д"/>
+        <key l="й" lp="%"/><key l="ц" lp="^"/><key l="у" lp="~"/><key l="к" lp="|"/><key l="е" lp="["/>
+        <key l="н" lp="]"/><key l="г" lp="&lt;"/><key l="ш" lp="&gt;"/><key l="щ" lp="{"/><key l="з" lp="}"/><key l="х" lp="№"/>
     </row>
+
+    <!-- Row 2: (blue: @ # & * - + = ( ) × ÷) -->
     <row>
-        <key l="я"/><key l="ч"/><key l="с"/><key l="м"/>
-        <key l="и"/><key l="т"/><key l="ь"/>
+        <key l="ф" lp="@"/><key l="ы" lp="#"/><key l="в" lp="&amp;"/><key l="а" lp="*"/><key l="п" lp="-"/>
+        <key l="р" lp="+"/><key l="о" lp="="/><key l="л" lp="("/><key l="д" lp=")"/><key l="ж" lp="×"/><key l="э" lp="÷"/>
+    </row>
+
+    <!-- Row 3: (blue: _ $ \" : ; ' € .) + спец: е→ё, ь→ъ -->
+    <row>
+        <key l="я" lp="_"/><key l="ч" lp="$"/><key l="с" lp="&quot;"/><key l="м" lp=":"/>
+        <key l="и" lp=";"/><key l="т" lp="&apos;"/><key l="ь" lp="ъ"/><key l="б" lp="€"/><key l="ю" lp="."/>
     </row>
 </keyboard>
